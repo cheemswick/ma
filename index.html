@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ma Sói 🐺 - Werewolf Game</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ── LOBBY SCREEN ─────────────────────────────── -->
+<div id="screen-lobby" class="screen active">
+  <div class="lobby-bg">
+    <div class="moon"></div>
+    <div class="stars" id="stars"></div>
+  </div>
+  <div class="lobby-center">
+    <div class="logo-block">
+      <div class="wolf-icon">🐺</div>
+      <h1 class="title">MA SÓI</h1>
+      <p class="subtitle">Werewolf · Trò Chơi Sói</p>
+    </div>
+
+    <div class="card" id="card-main">
+      <div class="input-group">
+        <label>Tên của bạn</label>
+        <input id="input-name" type="text" placeholder="Nhập tên..." maxlength="20" autocomplete="off"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-create">🏠 Tạo Phòng</button>
+        <button class="btn btn-secondary" id="btn-join-open">🚪 Vào Phòng</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="card-join">
+      <div class="input-group">
+        <label>Mã phòng</label>
+        <input id="input-code" type="text" placeholder="VD: AB12CD" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:4px;font-size:1.4rem;text-align:center"/>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-join-confirm">✅ Vào Phòng</button>
+        <button class="btn btn-ghost" id="btn-join-back">← Quay lại</button>
+      </div>
+    </div>
+
+    <p id="lobby-error" class="error-msg hidden"></p>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN ──────────────────────────────── -->
+<div id="screen-game" class="screen">
+  <div class="game-bg" id="game-bg"></div>
+
+  <div class="game-layout">
+    <!-- LEFT: Players + Status -->
+    <aside class="panel-left">
+      <div class="room-header">
+        <div class="room-info">
+          <span class="room-label">Phòng</span>
+          <span class="room-code" id="room-code-display">------</span>
+          <button class="copy-btn" id="btn-copy-code" title="Copy mã phòng">📋</button>
+        </div>
+        <div class="phase-badge" id="phase-badge">Sảnh chờ</div>
+      </div>
+
+      <div class="my-role-card hidden" id="my-role-card">
+        <div class="role-icon" id="my-role-icon">?</div>
+        <div class="role-info">
+          <div class="role-title">Vai trò của bạn</div>
+          <div class="role-name" id="my-role-name">—</div>
+        </div>
+      </div>
+
+      <div class="players-title">Người chơi <span id="player-count">0</span></div>
+      <div class="player-list" id="player-list"></div>
+
+      <div class="host-controls" id="host-controls">
+        <button class="btn btn-primary full-width" id="btn-start">⚔️ Bắt Đầu Trò Chơi</button>
+        <p class="hint">Cần ít nhất 4 người chơi</p>
+      </div>
+    </aside>
+
+    <!-- CENTER: Main action area -->
+    <main class="panel-center">
+      <!-- Phase announcer -->
+      <div class="phase-banner" id="phase-banner">
+        <div class="phase-icon" id="phase-icon">🌙</div>
+        <div class="phase-text" id="phase-text">Đang chờ...</div>
+        <div class="phase-sub" id="phase-sub"></div>
+      </div>
+
+      <!-- Night actions -->
+      <div class="action-area hidden" id="action-wolf">
+        <h3 class="action-title">🐺 Chọn người cắn đêm nay</h3>
+        <p class="action-hint">Bạn là Ma Sói. Chọn 1 dân làng để tiêu diệt.</p>
+        <div class="target-grid" id="wolf-targets"></div>
+      </div>
+
+      <div class="action-area hidden" id="action-seer">
+        <h3 class="action-title">🔮 Soi bói người chơi</h3>
+        <p class="action-hint">Bạn là Tiên Tri. Chọn 1 người để biết họ có phải Sói không.</p>
+        <div class="target-grid" id="seer-targets"></div>
+        <div class="seer-result hidden" id="seer-result-box"></div>
+      </div>
+
+      <div class="action-area hidden" id="action-villager-night">
+        <div class="sleeping">
+          <div class="sleep-icon">😴</div>
+          <p>Bạn đang ngủ...<br><small>Chờ bình minh</small></p>
+        </div>
+      </div>
+
+      <!-- Vote area -->
+      <div class="action-area hidden" id="action-vote">
+        <h3 class="action-title">🗳️ Bỏ phiếu treo cổ</h3>
+        <p class="action-hint">Chọn người bạn nghi là Ma Sói.</p>
+        <div class="target-grid" id="vote-targets"></div>
+        <button class="btn btn-ghost" id="btn-skip-vote" style="margin-top:12px">🤐 Bỏ qua</button>
+      </div>
+
+      <!-- Day discussion -->
+      <div class="action-area hidden" id="action-day">
+        <div class="day-info">
+          <div class="sun-icon">☀️</div>
+          <p>Hãy thảo luận với mọi người!<br><small>Dùng khung chat bên phải</small></p>
+          <button class="btn btn-secondary" id="btn-skip-to-vote" style="margin-top:16px">⏩ Bỏ phiếu ngay (Host)</button>
+        </div>
+      </div>
+
+      <!-- Game Over -->
+      <div class="action-area hidden" id="action-gameover">
+        <div class="gameover-card" id="gameover-card">
+          <div class="gameover-icon" id="gameover-icon">🎉</div>
+          <h2 id="gameover-title">Kết thúc!</h2>
+          <p id="gameover-desc"></p>
+          <div class="reveal-list" id="reveal-list"></div>
+          <button class="btn btn-primary" id="btn-new-game" style="margin-top:20px">🔄 Ván mới</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: Chat -->
+    <aside class="panel-right">
+      <div class="chat-header">💬 Chat Làng</div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <input id="chat-input" type="text" placeholder="Nhắn tin..." maxlength="200" autocomplete="off"/>
+        <button id="btn-send" class="send-btn">➤</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
